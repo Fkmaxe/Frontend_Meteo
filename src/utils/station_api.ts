@@ -12,4 +12,16 @@ export const StationsService = (API_BASE_URL : string) => ({
 
         return res.json();
     },
+    getLastMeasurement: async (stationId: number, token: string) => {
+        const res = await fetch(`${API_BASE_URL}/data/sensor-readings/${stationId}/last-measurement`, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) {
+            return null; // Aucune donnée trouvée
+        }
+
+        const data = await res.json();
+        return data.lastMeasurement || null;
+    }
 });
