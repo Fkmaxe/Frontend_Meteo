@@ -11,6 +11,10 @@ export default {
       colors: {
         background: "var(--background)",
         foreground: "var(--foreground)",
+        bordeaux: {
+          DEFAULT: "#800000",
+          dark: "#600000",
+        },
       },
     },
   },
