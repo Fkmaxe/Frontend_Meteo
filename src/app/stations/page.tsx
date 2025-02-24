@@ -14,7 +14,7 @@ export default function Stations() {
                 const token = localStorage.getItem("jwtToken");
                 if (!token) throw new Error("Non autorisé");
 
-                const data = await api.getStations(token);
+                const data = await api.stations.getStations(token);
                 setStations(data);
                 setFilteredStations(data); // Par défaut, toutes les stations sont affichées
             } catch (err: any) {
