@@ -16,6 +16,11 @@ interface NewUser {
     role: string;
 }
 
+interface UpdateUser extends Partial<NewUser> {
+    newPassword?: string;
+    confirmPassword?: string;
+}
+
 export default function UserManagement() {
     const [users, setUsers] = useState<User[]>([]);
     const [newUser, setNewUser] = useState<NewUser>({
@@ -26,7 +31,7 @@ export default function UserManagement() {
     });
     const [error, setError] = useState<string>("");
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [selectedUser, setSelectedUser] = useState<UpdateUser | null>(null);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -72,17 +77,26 @@ export default function UserManagement() {
     };
 
     const handleModifyUser = (user: User) => {
-        setSelectedUser(user);
+        setSelectedUser({ ...user, newPassword: "", confirmPassword: "" });
         setIsModalOpen(true);
     };
 
-    const handleModifySubmit = async (modifiedUser: User) => {
+    const handleModifySubmit = async () => {
+        if (!selectedUser) return;
+
+        const { newPassword, confirmPassword, ...userData } = selectedUser;
+
+        if (newPassword && newPassword !== confirmPassword) {
+            setError("Les mots de passe ne correspondent pas.");
+            return;
+        }
+
         try {
             const token = localStorage.getItem("jwtToken");
             if (!token) throw new Error("Non autorisé");
 
-            await api.users.modifyUser(modifiedUser.id, token);
-            setUsers(users.map(u => u.id === modifiedUser.id ? modifiedUser : u));
+            const updatedUser = await api.users.updateUser(selectedUser.id, userData, token);
+            setUsers(users.map(u => u.id === updatedUser.id ? updatedUser : u));
             setIsModalOpen(false);
             setSelectedUser(null);
         } catch (err: any) {
@@ -169,7 +183,7 @@ export default function UserManagement() {
                                     Supprimer
                                 </button>
                                 <button
-                                    onClick={() => handleModifyUser(user.id)}
+                                    onClick={() => handleModifyUser(user)}
                                     className="bg-blue-400 text-white rounded-md px-4 py-2"
                                 >
                                     Modifier
@@ -194,38 +208,67 @@ export default function UserManagement() {
                         <input
                             type="text"
                             placeholder="Nom d'utilisateur"
-                            value={selectedUser.username}
+                            value={selectedUser.username ?? ""}
                             onChange={(e) =>
                                 setSelectedUser({
                                     ...selectedUser,
                                     username: e.target.value,
                                 })
                             }
-                            className="w-full border border-gray-300 rounded-md px-4 py-2 mb-4"
+                            className="w-full border border-gray-300 rounded-md px-4 py-2 mb-4 text-gray-700 focus:ring-2 focus:ring-bordeaux"
+
                         />
                         <input
                             type="email"
                             placeholder="Email"
-                            value={selectedUser.email}
+                            value={selectedUser.email ?? ""}
                             onChange={(e) =>
                                 setSelectedUser({
                                     ...selectedUser,
                                     email: e.target.value,
                                 })
                             }
-                            className="w-full border border-gray-300 rounded-md px-4 py-2 mb-4"
+                            className="w-full border border-gray-300 rounded-md px-4 py-2 mb-4 text-gray-700 focus:ring-2 focus:ring-bordeaux"
+
                         />
                         <input
                             type="text"
                             placeholder="Rôle"
-                            value={selectedUser.role}
+                            value={selectedUser.role ?? ""}
                             onChange={(e) =>
                                 setSelectedUser({
                                     ...selectedUser,
                                     role: e.target.value,
                                 })
                             }
-                            className="w-full border border-gray-300 rounded-md px-4 py-2 mb-4"
+                            className="w-full border border-gray-300 rounded-md px-4 py-2 mb-4 text-gray-700 focus:ring-2 focus:ring-bordeaux"
+
+                        />
+                        <input
+                            type="password"
+                            placeholder="Nouveau mot de passe"
+                            value={selectedUser.newPassword ?? ""}
+                            onChange={(e) =>
+                                setSelectedUser({
+                                    ...selectedUser,
+                                    newPassword: e.target.value,
+                                })
+                            }
+                            className="w-full border border-gray-300 rounded-md px-4 py-2 mb-4 text-gray-700 focus:ring-2 focus:ring-bordeaux"
+
+                        />
+                        <input
+                            type="password"
+                            placeholder="Confirmer le mot de passe"
+                            value={selectedUser.confirmPassword ?? ""}
+                            onChange={(e) =>
+                                setSelectedUser({
+                                    ...selectedUser,
+                                    confirmPassword: e.target.value,
+                                })
+                            }
+                            className="w-full border border-gray-300 rounded-md px-4 py-2 mb-4 text-gray-700 focus:ring-2 focus:ring-bordeaux"
+
                         />
                         <div className="flex justify-end gap-2">
                             <button
@@ -235,7 +278,7 @@ export default function UserManagement() {
                                 Annuler
                             </button>
                             <button
-                                onClick={() => handleModifySubmit(selectedUser)}
+                                onClick={handleModifySubmit}
                                 className="bg-blue-800 text-white rounded-md px-4 py-2"
                             >
                                 Appliquer
