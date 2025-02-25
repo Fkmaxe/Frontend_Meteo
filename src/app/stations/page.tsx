@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { api } from "@/utils/api";
+import Link from "next/link";
 
 // Définition du type Station
 interface Station {
@@ -81,22 +82,24 @@ export default function Stations() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredStations.length > 0 ? (
                     filteredStations.map((station) => (
-                        <div
-                            key={station.station_id}
-                            className="p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition transform hover:scale-105 flex flex-col"
-                        >
-                            <div className="flex items-center justify-between">
-                                <h2 className="text-xl font-semibold text-bordeaux">{station.name_station}</h2>
-                                {/* Indicateur de statut */}
-                                <span className={`w-4 h-4 rounded-full ${getStatusColor(station)}`} />
-                            </div>
-                            <p className="text-gray-600">{station.name}</p>
+                        <Link key={station.station_id} href={`/stations/${station.station_id}`} className="block">
+                            <div
+                                key={station.station_id}
+                                className="p-6 bg-white rounded-xl shadow-lg hover:shadow-xl transition transform hover:scale-105 flex flex-col"
+                            >
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-xl font-semibold text-bordeaux">{station.name_station}</h2>
+                                    {/* Indicateur de statut */}
+                                    <span className={`w-4 h-4 rounded-full ${getStatusColor(station)}`} />
+                                </div>
+                                <p className="text-gray-600">{station.name}</p>
 
-                            {/* Dernière date de mesure */}
-                            <p className="text-gray-500 text-sm mt-2">
-                                Dernière mesure : {station.lastMeasurement ? new Date(station.lastMeasurement).toLocaleString() : "Aucune donnée"}
-                            </p>
-                        </div>
+                                {/* Dernière date de mesure */}
+                                <p className="text-gray-500 text-sm mt-2">
+                                    Dernière mesure : {station.lastMeasurement ? new Date(station.lastMeasurement).toLocaleString() : "Aucune donnée"}
+                                </p>
+                            </div>
+                        </Link>
                     ))
                 ) : (
                     <p className="text-center text-gray-500 col-span-full">Aucune station trouvée.</p>
