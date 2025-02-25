@@ -9,6 +9,7 @@ export default function Header() {
                 </Link>
                 <div className="space-x-6">
                     <Link href="/stations" className="hover:underline">Stations</Link>
+                    <Link href="/users" className="hover:underline">Utilisateurs</Link>
                     <Link href="/login" className="hover:underline">Se connecter</Link>
                 </div>
             </nav>
