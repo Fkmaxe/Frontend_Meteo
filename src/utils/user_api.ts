@@ -1,5 +1,4 @@
 export const UserService = (API_BASE_URL: string) => ({
-    // Users
     getUsers: async (token: string) => {
         const response = await fetch(`${API_BASE_URL}/users`, {
             method: 'GET',
@@ -34,24 +33,22 @@ export const UserService = (API_BASE_URL: string) => ({
         });
         if (!response.ok) throw new Error('Failed to delete user');
 
-        // Handle 204 No Content response
         if (response.status === 204) {
-            return null; // No content to parse
+            return null;
         }
         return response.json();
     },
 
-    modifyUser: async (id: number, token: string) => {
+    updateUser: async (id: number, userData: Partial<NewUser>, token: string) => {
         const response = await fetch(`${API_BASE_URL}/users/${id}`, {
-            method: 'PUT',
+            method: 'PATCH',
             headers: {
                 'Authorization': `Bearer ${token}`,
                 "Content-Type": "application/json",
             },
-            // You might want to add a body here if needed:
-            // body: JSON.stringify(userData),
+            body: JSON.stringify(userData),
         });
-        if (!response.ok) throw new Error('Failed to modify user');
+        if (!response.ok) throw new Error('Failed to update user');
         return response.json();
     },
 });
