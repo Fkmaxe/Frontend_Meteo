@@ -159,7 +159,7 @@ export default function StationDetail() {
         try {
             const response = await api.stations.createStationNote(stationId, noteData, router);
             if (!response.user) {
-                console.warn("User data missing in response, setting to Unknown");
+                console.warn("user data missing in response, setting to Unknown");
                 response.user = { name: "Unknown" };
             }
             setNotes([response, ...notes]);
