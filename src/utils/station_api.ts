@@ -1,154 +1,166 @@
+import {ApiCall} from './apiUtils';
 export const StationsService = (API_BASE_URL: string) => ({
     // Récupère toutes les stations
-    getStations: async (token: string) => {
-        const res = await fetch(`${API_BASE_URL}/stations`, {
-            headers: {Authorization: `Bearer ${token}`},
-        });
 
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || "Impossible de récupérer les stations");
-        }
 
-        return res.json();
+    getStations: async (token: string, router: ReturnType<typeof import('next/navigation').useRouter>) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/stations`,
+                {
+                headers: { Authorization: `Bearer ${token}` },
+                }
+            ),
+            router
+        );
     },
 
-    // Récupère la dernière mesure pour une station
-    getLastMeasurement: async (stationId: number, token: string) => {
-        const res = await fetch(`${API_BASE_URL}/data/sensor-readings/${stationId}/last-measurement`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-            return null; // Aucune donnée trouvée
-        }
-
-        const data = await res.json();
-        return data.lastMeasurement || null;
+    // Retrieves the last measurement for a station.
+    // If redirection is desired on failure, pass the router instance.
+    getLastMeasurement: async (
+        stationId: number,
+        token: string,
+        router: ReturnType<typeof import('next/navigation').useRouter>
+    ) => {
+        return ApiCall(
+            fetch(
+                `${API_BASE_URL}/data/sensor-readings/${stationId}/last-measurement`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                }
+            ),
+            router
+        ).catch(() => null);
     },
 
-    // Récupère les détails d'une station spécifique
-    getStation: async (stationId: number, token: string) => {
-        const res = await fetch(`${API_BASE_URL}/stations/${stationId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || "Impossible de récupérer les détails de la station");
-        }
-
-        return res.json();
+    // Retrieves details for a specific station.
+    getStation: async (
+        stationId: number,
+        token: string,
+        router: ReturnType<typeof import('next/navigation').useRouter>
+    ) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/stations/${stationId}`,
+                {
+                headers: { Authorization: `Bearer ${token}` },
+                }
+            ),
+            router
+        );
     },
 
-    // Récupère les mesures d'une station spécifique
-    getMeasurements: async (stationId: number, token: string, params = {}) => {
+// Retrieves measurements for a specific station.
+    getMeasurements: async (
+        stationId: number,
+        token: string,
+        router: ReturnType<typeof import('next/navigation').useRouter>,
+        params = {}
+    ) => {
         let url = `${API_BASE_URL}/data/sensor-readings`;
-
-        // Ajouter le filtre de station à la liste des paramètres
         const queryParams = new URLSearchParams({
             station_id: stationId.toString(),
-            ...params
+            ...params,
         });
-
         url += `?${queryParams.toString()}`;
 
-        const res = await fetch(url, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || "Impossible de récupérer les mesures");
-        }
-
-        return res.json();
-    },
-
-    // Récupère les capteurs actifs pour une station
-    getSensors: async (stationId: number, token: string) => {
-        const res = await fetch(`${API_BASE_URL}/stations/${stationId}/active-sensors`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || "Impossible de récupérer les capteurs actifs");
-        }
-
-        return res.json();
-    },
-
-    // Récupère les notes associées à une station
-    getStationNotes: async (stationId: number, token: string) => {
-        const res = await fetch(`${API_BASE_URL}/station-notes/station/${stationId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || "Impossible de récupérer les notes de la station");
-        }
-        return res.json();
-    },
-
-    // Crée une note pour une station
-    createStationNote: async (stationId: number, noteData: {title: string, note_content: string}, token: string) => {
-        const res = await fetch(`${API_BASE_URL}/station-notes`, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                station_id: stationId,
-                title: noteData.title,
-                note_content: noteData.note_content,
+        return ApiCall(
+            fetch(url, {
+                headers: { Authorization: `Bearer ${token}` },
             }),
-        });
-
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || "Impossible de créer la note");
-        }
-
-        return res.json();
+            router
+        );
     },
 
-    delStationNote: async (noteId: number, token: string) => {
-        const res = await fetch(`${API_BASE_URL}/station-notes/${noteId}`, {
-            method: 'DELETE',
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-        });
 
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || "Impossible de supprimer la note");
-        }
-
-        return res.ok // expect only a status code like 200 for success
-    },
-
-    modifyStationNote: async (noteId: number, noteData: {title: string, note_content: string}, token: string) => {
-        const res = await fetch(`${API_BASE_URL}/station-notes/${noteId}`, {
-            method: 'PUT',
-            headers: {
-                Authorization: `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                title: noteData.title,
-                note_content: noteData.note_content,
+    // Retrieves active sensors for a station.
+    getSensors: async (
+        stationId: number,
+        token: string,
+        router: ReturnType<typeof import('next/navigation').useRouter>
+    ) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/stations/${stationId}/active-sensors`, {
+                headers: { Authorization: `Bearer ${token}` },
             }),
-        });
+            router
+        );
+    },
 
-        if (!res.ok) {
-            const errorData = await res.json();
-            throw new Error(errorData.message || "Impossible de modifier la note");
-        }
 
-        return res.json();
-    }
+    // Retrieves station notes.
+    getStationNotes: async (
+        stationId: number,
+        token: string,
+        router: ReturnType<typeof import('next/navigation').useRouter>
+    ) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/station-notes/station/${stationId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            }),
+            router
+        );
+    },
+
+    // Creates a note for a station.
+    createStationNote: async (
+        stationId: number,
+        noteData: { title: string; note_content: string },
+        token: string,
+        router: ReturnType<typeof import('next/navigation').useRouter>
+    ) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/station-notes`, {
+                method: 'POST',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    station_id: stationId,
+                    title: noteData.title,
+                    note_content: noteData.note_content,
+                }),
+            }),
+            router
+        );
+    },
+
+
+    // Deletes a station note.
+    delStationNote: async (
+        noteId: number,
+        token: string,
+        router: ReturnType<typeof import('next/navigation').useRouter>
+    ) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/station-notes/${noteId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` },
+            }),
+            router
+        );
+    },
+
+
+    // Modifies a station note.
+    modifyStationNote: async (
+        noteId: number,
+        noteData: { title: string; note_content: string },
+        token: string,
+        router: ReturnType<typeof import('next/navigation').useRouter>
+    ) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/station-notes/${noteId}`, {
+                method: 'PUT',
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    title: noteData.title,
+                    note_content: noteData.note_content,
+                }),
+            }),
+            router
+        );
+    },
 });

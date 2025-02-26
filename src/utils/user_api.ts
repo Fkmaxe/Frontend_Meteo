@@ -1,54 +1,57 @@
+import {ApiCall} from "@/utils/apiUtils";
+
 export const UserService = (API_BASE_URL: string) => ({
-    getUsers: async (token: string) => {
-        const response = await fetch(`${API_BASE_URL}/users`, {
-            method: 'GET',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
-        if (!response.ok) throw new Error('Failed to fetch users');
-        return response.json();
+
+    login: async (email: string, password: string, router: ReturnType<typeof import('next/navigation').useRouter>) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/auth/login`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, password }),
+            }),
+            router
+        );
     },
 
-    createUser: async (user: any, token: string) => {
-        const response = await fetch(`${API_BASE_URL}/users`, {
-            method: "POST",
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(user),
-        });
-        if (!response.ok) throw new Error("Failed to create user");
-        return response.json();
+    getUsers: async (token: string, router: ReturnType<typeof import('next/navigation').useRouter>) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/users`, {
+                method: 'GET',
+                headers: {'Authorization': `Bearer ${token}`, "Content-Type": "application/json"},
+            }),
+            router
+        );
     },
 
-    deleteUser: async (id: number, token: string) => {
-        const response = await fetch(`${API_BASE_URL}/users/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-            },
-        });
-        if (!response.ok) throw new Error('Failed to delete user');
-
-        if (response.status === 204) {
-            return null;
-        }
-        return response.json();
+    createUser: async (user: any, token: string, router: ReturnType<typeof import('next/navigation').useRouter>) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/users`, {
+                method: "POST",
+                headers: { 'Authorization': `Bearer ${token}`, "Content-Type": "application/json" },
+                body: JSON.stringify(user),
+            }),
+            router
+        );
     },
 
-    updateUser: async (id: number, userData: Partial<NewUser>, token: string) => {
-        const response = await fetch(`${API_BASE_URL}/users/${id}`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify(userData),
-        });
-        if (!response.ok) throw new Error('Failed to update user');
-        return response.json();
+    deleteUser: async (id: number, token: string, router: ReturnType<typeof import('next/navigation').useRouter>) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/users/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` },
+            }),
+            router
+        );
+    },
+
+    updateUser: async (id: number, userData: Partial<NewUser>, token: string, router: ReturnType<typeof import('next/navigation').useRouter>) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/users/${id}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${token}`, "Content-Type": "application/json" },
+                body : JSON.stringify(userData),
+            }),
+            router
+        );
     },
 });
