@@ -3,23 +3,10 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { api } from "@/utils/api";
 import Link from "next/link";
-import {
-    DndContext,
-    closestCenter,
-    MouseSensor,
-    TouchSensor,
-    useSensor,
-    useSensors,
-} from "@dnd-kit/core";
-import {
-    arrayMove,
-    SortableContext,
-    useSortable,
-    verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
+import { DndContext, closestCenter, MouseSensor, TouchSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-// Définition des types
 interface Station {
     station_id: number;
     name_station: string;
@@ -42,8 +29,8 @@ interface Sensor {
 }
 
 interface StationNote {
-    created_at: string
-    note_content: string,
+    created_at: string;
+    note_content: string;
     note_id: number;
     station_id: number;
     title: string;
@@ -77,40 +64,36 @@ export default function StationDetail() {
 
     const mouseSensor = useSensor(MouseSensor, { activationConstraint: { distance: 5 } });
     const touchSensor = useSensor(TouchSensor);
-    const sensors = useSensors(mouseSensor, touchSensor);
+    const sensorsDnD = useSensors(mouseSensor, touchSensor);
 
     useEffect(() => {
         const fetchStationDetails = async () => {
             try {
-                setLoading(true);
-                const token = localStorage.getItem("jwtToken");
-                if (!token) {
-                    router.push("/login");
-                    return;
-                }
-
-                const stationData = await api.stations.getStation(stationId, token);
+                const stationData = await api.stations.getStation(stationId, router);
                 setStation(stationData);
 
-                const allSensorsData = await api.stations.getSensors(stationId, token);
-
+                const allSensorsData = await api.stations.getSensors(stationId, router);
                 const active = allSensorsData.filter((sensor: Sensor) => !sensor.end_date);
                 const inactive = allSensorsData.filter((sensor: Sensor) => sensor.end_date);
 
-                active.sort((a, b) => a.sensor_order - b.sensor_order);
-                inactive.sort((a, b) => a.sensor_order - b.sensor_order);
+                active.sort((a: Sensor, b: Sensor) => a.sensor_order - b.sensor_order);
+                inactive.sort((a: Sensor, b: Sensor) => a.sensor_order - b.sensor_order);
 
                 setActiveSensors(active);
                 setInactiveSensors(inactive);
-                setOriginalActiveSensors(active); // Store original order
+                setOriginalActiveSensors(active);
 
-                const notesData = await api.stations.getStationNotes(stationId, token);
+                const notesData = await api.stations.getStationNotes(stationId, router);
                 setNotes(notesData);
 
                 setLoading(false);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Erreur lors du chargement des données:", err);
-                setError(err.message || "Une erreur est survenue");
+                if (err instanceof Error) {
+                    setError(err.message);
+                } else {
+                    setError("Une erreur est survenue");
+                }
                 setLoading(false);
             }
         };
@@ -126,21 +109,22 @@ export default function StationDetail() {
         return "bg-green-500";
     };
 
-    const handleDragStart = (event: any) => {
-        setDraggingSensorId(event.active.id);
+    const handleDragStart = (event: { active: { id: string } }) => {
+        setDraggingSensorId(Number(event.active.id));
     };
 
-    const handleDragEnd = (event: any) => {
-        const { active, over } = event;
-        if (active.id !== over.id) {
+    const handleDragEnd = (event: { active: { id: string }; over: { id: string } }) => {
+        const activeId = Number(event.active.id);
+        const overId = Number(event.over.id);
+        if (activeId !== overId) {
             setActiveSensors((items) => {
-                const oldIndex = items.findIndex((item) => item.sensor_id === active.id);
-                const newIndex = items.findIndex((item) => item.sensor_id === over.id);
+                const oldIndex = items.findIndex((item) => item.sensor_id === activeId);
+                const newIndex = items.findIndex((item) => item.sensor_id === overId);
                 const updatedItems = arrayMove(items, oldIndex, newIndex);
                 updatedItems.forEach((item, index) => {
                     item.sensor_order = index + 1;
                 });
-                setIsModified(true); // Mark as modified
+                setIsModified(true);
                 return updatedItems;
             });
         }
@@ -148,9 +132,7 @@ export default function StationDetail() {
     };
 
     const handleConfirm = async () => {
-        // Logic to save changes to the database
         console.log("Confirmed new order:", activeSensors);
-        // Reset modification state
         setIsModified(false);
         setOriginalActiveSensors(activeSensors);
     };
@@ -158,7 +140,7 @@ export default function StationDetail() {
     const handleRollback = () => {
         const rolledBackSensors = originalActiveSensors.map((sensor, index) => ({
             ...sensor,
-            sensor_order: index + 1,
+            sensor_order: index + 1
         }));
         setActiveSensors(rolledBackSensors);
         setIsModified(false);
@@ -170,27 +152,19 @@ export default function StationDetail() {
             router.push("/login");
             return;
         }
-
         const noteData = {
             title: noteTitle,
             note_content: newNote,
         };
-
         try {
-            const response = await api.stations.createStationNote(stationId, noteData, token);
-
-            // Log the response for debugging
-            console.log("Create Note Response:", response);
-
-            // Ensure the response includes user data
+            const response = await api.stations.createStationNote(stationId, noteData, router);
             if (!response.user) {
                 console.warn("User data missing in response, setting to Unknown");
-                response.user = { name: "Unknown" }; // Default to "Unknown" if user data is missing
+                response.user = { name: "Unknown" };
             }
-
             setNotes([response, ...notes]);
             setNewNote("");
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Erreur lors de l'ajout de la note:", err);
         }
     };
@@ -201,11 +175,10 @@ export default function StationDetail() {
             router.push("/login");
             return;
         }
-
         try {
-            await api.stations.delStationNote(noteId, token);
+            await api.stations.delStationNote(noteId, router);
             setNotes(notes.filter((note) => note.note_id !== noteId));
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Erreur lors de la suppression de la note:", err);
         }
     };
@@ -216,14 +189,13 @@ export default function StationDetail() {
             router.push("/login");
             return;
         }
-
         try {
-            await api.stations.delStationNote(noteId, token);
+            await api.stations.modifyStationNote(noteId, { title: "", note_content: "" }, router);
             setNotes(notes.filter((note) => note.note_id !== noteId));
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Erreur lors de la modification de la note:", err);
         }
-    }
+    };
 
     const getStationStatusText = (station: Station): string => {
         if (!station.active) return "Désactivée";
@@ -273,10 +245,7 @@ export default function StationDetail() {
     return (
         <div className="min-h-screen bg-gray-100 p-8">
             <div className="max-w-4xl mx-auto">
-                <Link
-                    href="/stations"
-                    className="mb-6 inline-block text-bordeaux hover:underline font-medium"
-                >
+                <Link href="/stations" className="mb-6 inline-block text-bordeaux hover:underline font-medium">
                     &larr; Retour à la liste des stations
                 </Link>
 
@@ -286,37 +255,23 @@ export default function StationDetail() {
                         <span className={`w-4 h-4 rounded-full ${getStatusColor(station)}`} />
                     </div>
                     <p className="text-gray-600 text-lg">{station.name}</p>
-                    <p className="text-gray-500 mt-2">
-                        Statut: {getStationStatusText(station)}
-                    </p>
+                    <p className="text-gray-500 mt-2">Statut: {getStationStatusText(station)}</p>
                 </div>
 
                 <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
                     <h2 className="text-2xl font-semibold text-bordeaux mb-4">Capteurs actifs</h2>
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-                        <SortableContext items={activeSensors} strategy={verticalListSortingStrategy}>
+                    <DndContext sensors={sensorsDnD} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+                        <SortableContext items={activeSensors.map((sensor) => sensor.sensor_id.toString())} strategy={verticalListSortingStrategy}>
                             {activeSensors.map((sensor) => (
-                                <SortableItem
-                                    key={sensor.sensor_id}
-                                    sensor={sensor}
-                                    isDragging={draggingSensorId === sensor.sensor_id}
-                                />
+                                <SortableItem key={sensor.sensor_id} sensor={sensor} isDragging={draggingSensorId === sensor.sensor_id} />
                             ))}
                         </SortableContext>
                     </DndContext>
                     <div className="flex justify-end space-x-4 mt-4">
-                        <button
-                            onClick={handleRollback}
-                            disabled={!isModified}
-                            className="px-4 py-2 bg-gray-300 text-bordeaux rounded hover:bg-gray-400"
-                        >
+                        <button onClick={handleRollback} disabled={!isModified} className="px-4 py-2 bg-gray-300 text-bordeaux rounded hover:bg-gray-400">
                             Annuler
                         </button>
-                        <button
-                            onClick={handleConfirm}
-                            disabled={!isModified}
-                            className="px-4 py-2 bg-bordeaux text-white rounded hover:bg-bordeaux-dark"
-                        >
+                        <button onClick={handleConfirm} disabled={!isModified} className="px-4 py-2 bg-bordeaux text-white rounded hover:bg-bordeaux-dark">
                             Confirmer
                         </button>
                     </div>
@@ -332,14 +287,10 @@ export default function StationDetail() {
                 {showInactive && (
                     <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
                         <h2 className="text-2xl font-semibold text-bordeaux mb-4">Capteurs inactifs</h2>
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-                            <SortableContext items={inactiveSensors} strategy={verticalListSortingStrategy}>
+                        <DndContext sensors={sensorsDnD} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+                            <SortableContext items={inactiveSensors.map((sensor) => sensor.sensor_id.toString())} strategy={verticalListSortingStrategy}>
                                 {inactiveSensors.map((sensor) => (
-                                    <SortableItem
-                                        key={sensor.sensor_id}
-                                        sensor={sensor}
-                                        isDragging={draggingSensorId === sensor.sensor_id}
-                                    />
+                                    <SortableItem key={sensor.sensor_id} sensor={sensor} isDragging={draggingSensorId === sensor.sensor_id} />
                                 ))}
                             </SortableContext>
                         </DndContext>
@@ -362,10 +313,7 @@ export default function StationDetail() {
                             placeholder="Contenu de la note"
                             className="w-full p-2 border rounded-md text-gray-700 min-h-[100px]"
                         />
-                        <button
-                            onClick={handleAddNote}
-                            className="mt-2 px-4 py-2 bg-bordeaux text-white rounded hover:bg-bordeaux-dark"
-                        >
+                        <button onClick={handleAddNote} className="mt-2 px-4 py-2 bg-bordeaux text-white rounded hover:bg-bordeaux-dark">
                             Ajouter une note
                         </button>
                     </div>
@@ -382,16 +330,10 @@ export default function StationDetail() {
                                     <h4 className="text-gray-800">{note.title}</h4>
                                     <p className="text-gray-600">{note.note_content}</p>
                                     <div>
-                                        <button
-                                            onClick={() => handleDeleteNote(note.note_id)}
-                                            className="mt-2 text-red-500 hover:underline"
-                                        >
+                                        <button onClick={() => handleDeleteNote(note.note_id)} className="mt-2 text-red-500 hover:underline">
                                             Supprimer
                                         </button>
-                                        <button
-                                            onClick={() => handleModifyNote(note.note_id)}
-                                            className="mt-2 text-red-500 hover:underline"
-                                        >
+                                        <button onClick={() => handleModifyNote(note.note_id)} className="mt-2 text-red-500 hover:underline">
                                             Modifier
                                         </button>
                                     </div>
@@ -408,7 +350,7 @@ export default function StationDetail() {
 }
 
 const SortableItem = ({ sensor, isDragging }: { sensor: Sensor; isDragging: boolean }) => {
-    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: sensor.sensor_id });
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: sensor.sensor_id.toString() });
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
@@ -417,21 +359,15 @@ const SortableItem = ({ sensor, isDragging }: { sensor: Sensor; isDragging: bool
     };
 
     return (
-        <div
-            ref={setNodeRef}
-            style={style}
-            {...attributes}
-            {...listeners}
-            className="p-4 border rounded-md bg-gray-50 hover:bg-gray-100 cursor-grab flex justify-between items-start"
-        >
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="p-4 border rounded-md bg-gray-50 hover:bg-gray-100 cursor-grab flex justify-between items-start">
             <div className="flex flex-col">
                 <p className="text-gray-700 font-medium">{sensor.sensor_type.sensor_name}</p>
                 <p className="text-gray-500 text-sm">{sensor.sensor_type.units}</p>
                 <p className="text-gray-500 text-sm">Depuis le {formatDate(sensor.start_date)}</p>
-                {sensor.end_date && (<p className="text-gray-500 text-sm">Jusqu&#39;au {formatDate(sensor.end_date)}</p>)}
+                {sensor.end_date && <p className="text-gray-500 text-sm">Jusqu&#39;au {formatDate(sensor.end_date)}</p>}
             </div>
-        <div className="text-right flex items-center">
-            <p className="text-gray-500 font-medium">{sensor.sensor_order}</p>
+            <div className="text-right flex items-center">
+                <p className="text-gray-500 font-medium">{sensor.sensor_order}</p>
             </div>
         </div>
     );

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { api } from "@/utils/api";
 import Link from "next/link";
+import {useRouter} from "next/navigation";
 
 // Définition du type Station
 interface Station {
@@ -18,6 +19,7 @@ export default function Stations() {
     const [filteredStations, setFilteredStations] = useState<Station[]>([]);
     const [search, setSearch] = useState("");
     const [error, setError] = useState("");
+    const router = useRouter();
 
     useEffect(() => {
         const fetchStations = async () => {
@@ -25,25 +27,29 @@ export default function Stations() {
                 const token = localStorage.getItem("jwtToken");
                 if (!token) throw new Error("Non autorisé");
 
-                const stationsData: Station[] = await api.stations.getStations(token);
+                const stationsData: Station[] = await api.stations.getStations(router);
 
                 // Récupérer la dernière mesure pour chaque station
                 const enrichedStations: Station[] = await Promise.all(
                     stationsData.map(async (station) => {
-                        const lastMeasurement = await api.stations.getLastMeasurement(station.station_id, token);
+                        const lastMeasurement = await api.stations.getLastMeasurement(station.station_id, router);
                         return { ...station, lastMeasurement };
                     })
                 );
 
                 setStations(enrichedStations);
                 setFilteredStations(enrichedStations);
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err) {
+                if (err instanceof Error) {
+                    setError(err.message);
+                } else {
+                    setError("An unknown error occurred");
+                }
             }
         };
 
-        fetchStations();
-    }, []);
+        fetchStations().then(r => r);
+    }, [router]);
 
     // Fonction de filtrage en fonction du champ de recherche
     useEffect(() => {
