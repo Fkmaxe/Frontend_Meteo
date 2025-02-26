@@ -42,11 +42,15 @@ interface Sensor {
 }
 
 interface StationNote {
+    created_at: string
+    note_content: string,
     note_id: number;
     station_id: number;
-    note: string;
-    created_at: string;
-    created_by: string;
+    title: string;
+    user: {
+        name: string;
+    };
+    user_id: number;
 }
 
 const formatDate = (dateString: string) => {
@@ -166,21 +170,29 @@ export default function StationDetail() {
             router.push("/login");
             return;
         }
-        /*
+
         const noteData = {
-            title : notetitle,
+            title: noteTitle,
             note_content: newNote,
-            user_id: "User", // don't know how to get the id of the user for now
         };
 
         try {
             const response = await api.stations.createStationNote(stationId, noteData, token);
+
+            // Log the response for debugging
+            console.log("Create Note Response:", response);
+
+            // Ensure the response includes user data
+            if (!response.user) {
+                console.warn("User data missing in response, setting to Unknown");
+                response.user = { name: "Unknown" }; // Default to "Unknown" if user data is missing
+            }
+
             setNotes([response, ...notes]);
             setNewNote("");
         } catch (err: any) {
             console.error("Erreur lors de l'ajout de la note:", err);
         }
-        */
     };
 
     const handleDeleteNote = async (noteId: number) => {
@@ -189,15 +201,29 @@ export default function StationDetail() {
             router.push("/login");
             return;
         }
-        /*
+
         try {
             await api.stations.delStationNote(noteId, token);
             setNotes(notes.filter((note) => note.note_id !== noteId));
         } catch (err: any) {
             console.error("Erreur lors de la suppression de la note:", err);
         }
-        */
     };
+
+    const handleModifyNote = async (noteId: number) => {
+        const token = localStorage.getItem("jwtToken");
+        if (!token) {
+            router.push("/login");
+            return;
+        }
+
+        try {
+            await api.stations.delStationNote(noteId, token);
+            setNotes(notes.filter((note) => note.note_id !== noteId));
+        } catch (err: any) {
+            console.error("Erreur lors de la modification de la note:", err);
+        }
+    }
 
     const getStationStatusText = (station: Station): string => {
         if (!station.active) return "Désactivée";
@@ -350,16 +376,25 @@ export default function StationDetail() {
                             {notes.map((note) => (
                                 <div key={note.note_id} className="border-b pb-4">
                                     <div className="flex justify-between text-sm text-gray-500 mb-1">
-                                        <span>Par: {note.created_by}</span>
+                                        <span>Par: {note.user.name}</span>
                                         <span>{formatDate(note.created_at)}</span>
                                     </div>
-                                    <p className="text-gray-700">{note.note}</p>
-                                    <button
-                                        onClick={() => handleDeleteNote(note.note_id)}
-                                        className="mt-2 text-red-500 hover:underline"
-                                    >
-                                        Supprimer
-                                    </button>
+                                    <h4 className="text-gray-800">{note.title}</h4>
+                                    <p className="text-gray-600">{note.note_content}</p>
+                                    <div>
+                                        <button
+                                            onClick={() => handleDeleteNote(note.note_id)}
+                                            className="mt-2 text-red-500 hover:underline"
+                                        >
+                                            Supprimer
+                                        </button>
+                                        <button
+                                            onClick={() => handleModifyNote(note.note_id)}
+                                            className="mt-2 text-red-500 hover:underline"
+                                        >
+                                            Modifier
+                                        </button>
+                                    </div>
                                 </div>
                             ))}
                         </div>

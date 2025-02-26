@@ -81,7 +81,7 @@ export const StationsService = (API_BASE_URL: string) => ({
 
     // Récupère les notes associées à une station
     getStationNotes: async (stationId: number, token: string) => {
-        const res = await fetch(`${API_BASE_URL}/station-notes?station_id=${stationId}`, {
+        const res = await fetch(`${API_BASE_URL}/station-notes/station/${stationId}`, {
             headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -89,12 +89,11 @@ export const StationsService = (API_BASE_URL: string) => ({
             const errorData = await res.json();
             throw new Error(errorData.message || "Impossible de récupérer les notes de la station");
         }
-
         return res.json();
     },
 
     // Crée une note pour une station
-    createStationNote: async (stationId: number, noteData: {title: string, note_content: string, user_id: number}, token: string) => {
+    createStationNote: async (stationId: number, noteData: {title: string, note_content: string}, token: string) => {
         const res = await fetch(`${API_BASE_URL}/station-notes`, {
             method: 'POST',
             headers: {
@@ -127,6 +126,27 @@ export const StationsService = (API_BASE_URL: string) => ({
         if (!res.ok) {
             const errorData = await res.json();
             throw new Error(errorData.message || "Impossible de supprimer la note");
+        }
+
+        return res.ok // expect only a status code like 200 for success
+    },
+
+    modifyStationNote: async (noteId: number, noteData: {title: string, note_content: string}, token: string) => {
+        const res = await fetch(`${API_BASE_URL}/station-notes/${noteId}`, {
+            method: 'PUT',
+            headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                title: noteData.title,
+                note_content: noteData.note_content,
+            }),
+        });
+
+        if (!res.ok) {
+            const errorData = await res.json();
+            throw new Error(errorData.message || "Impossible de modifier la note");
         }
 
         return res.json();
