@@ -175,11 +175,6 @@ export default function StationDetail() {
     };
 
     const handleModifyNote = async (noteId: number) => {
-        const token = localStorage.getItem("jwtToken");
-        if (!token) {
-            router.push("/login");
-            return;
-        }
         try {
             await api.stations.modifyStationNote(noteId, { title: "", note_content: "" }, router);
             setNotes(notes.filter((note) => note.note_id !== noteId));
