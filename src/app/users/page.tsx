@@ -57,7 +57,7 @@ export default function UserManagement() {
         if (!editingUser) return;
 
         if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
-            setError("Les mots de passe ne correspondent pas.");
+            addPopup("Les mots de passe ne correspondent pas", "error");
             return;
         }
 
