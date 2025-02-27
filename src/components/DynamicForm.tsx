@@ -1,4 +1,5 @@
 import { useState, useEffect, ChangeEvent, FormEvent } from "react";
+import BaseInput from "@/components/BaseInput";
 
 export interface Field {
     name: string;
@@ -47,7 +48,8 @@ export default function DynamicForm({
                     <label htmlFor={field.name} className="block font-medium text-gray-700">
                         {field.label}
                     </label>
-                    <input
+
+                    <BaseInput
                         type={field.type || "text"}
                         id={field.name}
                         name={field.name}
@@ -55,7 +57,6 @@ export default function DynamicForm({
                         onChange={handleChange}
                         placeholder={field.placeholder || ""}
                         required={field.required}
-                        className="w-full border border-gray-300 text-gray-700 rounded-md px-4 py-2"
                         {...field.props}
                     />
                 </div>

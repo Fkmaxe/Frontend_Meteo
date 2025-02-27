@@ -1,6 +1,6 @@
 "use client";
 import React from "react";
-import Card from "../Card";
+import BaseCard from "../BaseCard";
 
 export interface User {
     id: number;
@@ -17,7 +17,7 @@ interface UserCardProps {
 
 export default function UserCard({ user, onDelete, onModify }: UserCardProps) {
     return (
-        <Card className="hover:shadow-xl transition transform hover:scale-105 duration-300">
+        <BaseCard >
             <h2 className="text-2xl font-semibold text-bordeaux mb-2">{user.username}</h2>
             <p className="text-gray-600 mb-1">{user.email}</p>
             <p className="text-gray-600 mb-4">{user.role}</p>
@@ -35,6 +35,6 @@ export default function UserCard({ user, onDelete, onModify }: UserCardProps) {
                     Modifier
                 </button>
             </div>
-        </Card>
+        </BaseCard>
     );
 }
