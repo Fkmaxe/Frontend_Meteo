@@ -12,11 +12,11 @@ interface User {
 
 interface UserEditModalProps {
     user: User;
-    onSubmit: (data: Record<string, string>) => void;
-    onCancel: () => void;
+    onSubmitAction: (data: Record<string, string>) => void;
+    onCancelAction: () => void;
 }
 
-export default function UserEditModal({ user, onSubmit, onCancel }: UserEditModalProps) {
+export default function UserEditModal({ user, onSubmitAction, onCancelAction }: Readonly<UserEditModalProps>) {
     const fields: Field[] = [
         {
             name: "username",
@@ -59,17 +59,17 @@ export default function UserEditModal({ user, onSubmit, onCancel }: UserEditModa
     ];
 
     const handleSubmit = (formData: Record<string, string>) => {
-        onSubmit(formData);
+        onSubmitAction(formData);
     };
 
     return (
-        <Modal onClose={onCancel} className="w-96">
+        <Modal onClose={onCancelAction} className="w-96">
             <h2 className="text-2xl font-semibold text-bordeaux mb-4">
-                Modifier l'utilisateur
+                Modifier l&#39;utilisateur
             </h2>
             <DynamicForm fields={fields} onSubmit={handleSubmit} buttonText="Appliquer" />
             <button
-                onClick={onCancel}
+                onClick={onCancelAction}
                 className="mt-4 w-full bg-gray-500 text-white py-2 px-4 rounded"
             >
                 Annuler
