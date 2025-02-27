@@ -2,7 +2,7 @@ import {ApiCall} from './apiUtils';
 export const StationsService = (API_BASE_URL: string, getToken: () => string | null) => ({
     // Récupère toutes les stations
 
-
+    /* Station api calls */
     getStations: async (
         router: ReturnType<typeof import('next/navigation').useRouter>
     ) => {
@@ -12,20 +12,6 @@ export const StationsService = (API_BASE_URL: string, getToken: () => string | n
             }),
             router
         );
-    },
-
-    // Retrieves the last measurement for a station.
-    // If redirection is desired on failure, pass the router instance.
-    getLastMeasurement: async (
-        stationId: number,
-        router: ReturnType<typeof import('next/navigation').useRouter>
-    ) => {
-        return ApiCall(
-            fetch(`${API_BASE_URL}/data/sensor-readings/${stationId}/last-measurement`, {
-                    headers: { Authorization: `Bearer ${getToken()}` },
-            }),
-            router
-        ).catch(() => null);
     },
 
     // Retrieves details for a specific station.
@@ -40,44 +26,6 @@ export const StationsService = (API_BASE_URL: string, getToken: () => string | n
             router
         );
     },
-
-// Retrieves measurements for a specific station.
-    // not used in the current version of the app
-    getMeasurements: async (
-        stationId: number,
-        router: ReturnType<typeof import('next/navigation').useRouter>,
-        params = {}
-    ) => {
-
-        // may need some tinkering to get this to work as i didn't use it in the app, so may not work as expected
-        let url = `${API_BASE_URL}/data/sensor-readings`;
-        const queryParams = new URLSearchParams({
-            station_id: stationId.toString(),
-            ...params,
-        });
-        url += `?${queryParams.toString()}`;
-
-        return ApiCall(
-            fetch(url, {
-                headers: { Authorization: `Bearer ${getToken()}` },
-            }),
-            router
-        );
-    },
-
-    // Retrieves active sensors for a station.
-    getSensors: async (
-        stationId: number,
-        router: ReturnType<typeof import('next/navigation').useRouter>
-    ) => {
-        return ApiCall(
-            fetch(`${API_BASE_URL}/stations/${stationId}/active-sensors`, {
-                headers: { Authorization: `Bearer ${getToken()}` },
-            }),
-            router
-        );
-    },
-
 
     // Retrieves station notes.
     getStationNotes: async (
@@ -140,7 +88,7 @@ export const StationsService = (API_BASE_URL: string, getToken: () => string | n
     ) => {
         return ApiCall(
             fetch(`${API_BASE_URL}/station-notes/${noteId}`, {
-                method: 'PUT',
+                method: 'PATCH',
                 headers: {
                     Authorization: `Bearer ${getToken()}`,
                     'Content-Type': 'application/json',
@@ -153,4 +101,62 @@ export const StationsService = (API_BASE_URL: string, getToken: () => string | n
             router
         );
     },
+
+    /* Sensor related api Calls */
+
+    // Retrieves the last measurement for a station.
+    // If redirection is desired on failure, pass the router instance.
+    getLastMeasurement: async (
+        stationId: number,
+        router: ReturnType<typeof import('next/navigation').useRouter>
+    ) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/data/sensor-readings/${stationId}/last-measurement`, {
+                    headers: { Authorization: `Bearer ${getToken()}` },
+            }),
+            router
+        ).catch(() => null);
+    },
+
+
+
+    // Retrieves measurements for a specific station.
+    // not used in the current version of the app
+    getMeasurements: async (
+        stationId: number,
+        router: ReturnType<typeof import('next/navigation').useRouter>,
+        params = {}
+    ) => {
+
+        // may need some tinkering to get this to work as i didn't use it in the app, so may not work as expected
+        let url = `${API_BASE_URL}/data/sensor-readings`;
+        const queryParams = new URLSearchParams({
+            station_id: stationId.toString(),
+            ...params,
+        });
+        url += `?${queryParams.toString()}`;
+
+        return ApiCall(
+            fetch(url, {
+                headers: { Authorization: `Bearer ${getToken()}` },
+            }),
+            router
+        );
+    },
+
+    // Retrieves active sensors for a station.
+    getSensors: async (
+        stationId: number,
+        router: ReturnType<typeof import('next/navigation').useRouter>
+    ) => {
+        return ApiCall(
+            fetch(`${API_BASE_URL}/stations/${stationId}/active-sensors`, {
+                headers: { Authorization: `Bearer ${getToken()}` },
+            }),
+            router
+        );
+    },
+
+
+
 });
