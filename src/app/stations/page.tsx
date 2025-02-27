@@ -2,8 +2,8 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/utils/api";
-import StationCard, { Station } from "@/components/station/StationCard";
-import StationSearchBar from "@/components/station/StationSearchBar";
+import StationCard, { Station } from "@/components/stations/StationCard";
+import StationSearchBar from "@/components/stations/StationSearchBar";
 
 export default function Stations() {
     const [stations, setStations] = useState<Station[]>([]);
