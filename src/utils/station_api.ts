@@ -1,162 +1,175 @@
-import {ApiCall} from './apiUtils';
+import { ApiCall, handleApiError } from "@/utils/apiUtils";
+
+interface ApiError extends Error {
+    code?: string;
+    status?: number;
+}
+
 export const StationsService = (API_BASE_URL: string, getToken: () => string | null) => ({
-    // Récupère toutes les stations
+    getStations: async (router: ReturnType<typeof import('next/navigation').useRouter>) => {
+        try {
+            const token = getToken();
+            if (!token) throw new Error('Unauthorized access');
 
-    /* Station api calls */
-    getStations: async (
-        router: ReturnType<typeof import('next/navigation').useRouter>
-    ) => {
-        return ApiCall(
-            fetch(`${API_BASE_URL}/stations`, {
-                headers: { Authorization: `Bearer ${getToken()}` },
-            }),
-            router
-        );
+            return await ApiCall(
+                fetch(`${API_BASE_URL}/stations`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                router
+            );
+        } catch (error) {
+            handleApiError(error as ApiError, 'stations');
+        }
     },
 
-    // Retrieves details for a specific station.
-    getStation: async (
-        stationId: number,
-        router: ReturnType<typeof import('next/navigation').useRouter>
-    ) => {
-        return ApiCall(
-            fetch(`${API_BASE_URL}/stations/${stationId}`, {
-                headers: { Authorization: `Bearer ${getToken()}` },
-            }),
-            router
-        );
+    getStation: async (stationId: number, router: ReturnType<typeof import('next/navigation').useRouter>) => {
+        try {
+            const token = getToken();
+            if (!token) throw new Error('Unauthorized access');
+
+            return await ApiCall(
+                fetch(`${API_BASE_URL}/stations/${stationId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                router
+            );
+        } catch (error) {
+            handleApiError(error as ApiError, 'station', stationId);
+        }
     },
 
-    // Retrieves station notes.
-    getStationNotes: async (
-        stationId: number,
-        router: ReturnType<typeof import('next/navigation').useRouter>
-    ) => {
-        return ApiCall(
-            fetch(`${API_BASE_URL}/station-notes/station/${stationId}`, {
-                headers: { Authorization: `Bearer ${getToken()}` },
-            }),
-            router
-        );
+    getStationNotes: async (stationId: number, router: ReturnType<typeof import('next/navigation').useRouter>) => {
+        try {
+            const token = getToken();
+            if (!token) throw new Error('Unauthorized access');
+
+            return await ApiCall(
+                fetch(`${API_BASE_URL}/station-notes/station/${stationId}`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                router
+            );
+        } catch (error) {
+            handleApiError(error as ApiError, 'station notes', stationId);
+        }
     },
 
-    // Creates a note for a station.
     createStationNote: async (
         stationId: number,
         noteData: { title: string; note_content: string },
         router: ReturnType<typeof import('next/navigation').useRouter>
     ) => {
-        return ApiCall(
-            fetch(`${API_BASE_URL}/station-notes`, {
-                method: 'POST',
-                headers: {
-                    Authorization: `Bearer ${getToken()}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    station_id: stationId,
-                    title: noteData.title,
-                    note_content: noteData.note_content,
+        try {
+            const token = getToken();
+            if (!token) throw new Error('Unauthorized access');
+
+            return await ApiCall(
+                fetch(`${API_BASE_URL}/station-notes`, {
+                    method: 'POST',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        station_id: stationId,
+                        title: noteData.title,
+                        note_content: noteData.note_content,
+                    }),
                 }),
-            }),
-            router
-        );
+                router
+            );
+        } catch (error) {
+            handleApiError(error as ApiError, 'note creation');
+        }
     },
 
+    delStationNote: async (noteId: number, router: ReturnType<typeof import('next/navigation').useRouter>) => {
+        try {
+            const token = getToken();
+            if (!token) throw new Error('Unauthorized access');
 
-    // Deletes a station note.
-    delStationNote: async (
-        noteId: number,
-        router: ReturnType<typeof import('next/navigation').useRouter>
-    ) => {
-        return ApiCall(
-            fetch(`${API_BASE_URL}/station-notes/${noteId}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${getToken()}` },
-            }),
-            router
-        );
+            return await ApiCall(
+                fetch(`${API_BASE_URL}/station-notes/${noteId}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                router
+            );
+        } catch (error) {
+            handleApiError(error as ApiError, 'note deletion', noteId);
+        }
     },
 
-
-    // Modifies a station note.
-    // work in progress s
     modifyStationNote: async (
         noteId: number,
         noteData: { title: string; note_content: string },
         router: ReturnType<typeof import('next/navigation').useRouter>
     ) => {
-        return ApiCall(
-            fetch(`${API_BASE_URL}/station-notes/${noteId}`, {
-                method: 'PATCH',
-                headers: {
-                    Authorization: `Bearer ${getToken()}`,
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    title: noteData.title,
-                    note_content: noteData.note_content,
+        try {
+            const token = getToken();
+            if (!token) throw new Error('Unauthorized access');
+
+            const result = await ApiCall(
+                fetch(`${API_BASE_URL}/station-notes/${noteId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(noteData),
                 }),
-            }),
-            router
-        );
+                router
+            );
+
+            if (!result) {
+                throw new Error('Unauthorized access');
+            }
+
+            return result;
+        } catch (error) {
+            if (error instanceof Error) {
+                switch (error.message) {
+                    case 'Unauthorized access':
+                        throw new Error('Vous n\'avez pas la permission de modifier cette note');
+                    case `StationNote with ID ${noteId} not found`:
+                        throw new Error('Note introuvable');
+                    default:
+                        throw new Error('Échec de la modification de la note');
+                }
+            }
+            throw new Error('Une erreur inattendue est survenue');
+        }
     },
 
-    /* Sensor related api Calls */
+    getLastMeasurement: async (stationId: number, router: ReturnType<typeof import('next/navigation').useRouter>) => {
+        try {
+            const token = getToken();
+            if (!token) throw new Error('Unauthorized access');
 
-    // Retrieves the last measurement for a station.
-    // If redirection is desired on failure, pass the router instance.
-    getLastMeasurement: async (
-        stationId: number,
-        router: ReturnType<typeof import('next/navigation').useRouter>
-    ) => {
-        return ApiCall(
-            fetch(`${API_BASE_URL}/data/sensor-readings/${stationId}/last-measurement`, {
-                    headers: { Authorization: `Bearer ${getToken()}` },
-            }),
-            router
-        ).catch(() => null);
+            return await ApiCall(
+                fetch(`${API_BASE_URL}/data/sensor-readings/${stationId}/last-measurement`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                router
+            );
+        } catch (error) {
+            handleApiError(error as ApiError, 'last measurement', stationId);
+        }
     },
 
+    getSensors: async (stationId: number, router: ReturnType<typeof import('next/navigation').useRouter>) => {
+        try {
+            const token = getToken();
+            if (!token) throw new Error('Unauthorized access');
 
-
-    // Retrieves measurements for a specific station.
-    // not used in the current version of the app
-    getMeasurements: async (
-        stationId: number,
-        router: ReturnType<typeof import('next/navigation').useRouter>,
-        params = {}
-    ) => {
-
-        // may need some tinkering to get this to work as i didn't use it in the app, so may not work as expected
-        let url = `${API_BASE_URL}/data/sensor-readings`;
-        const queryParams = new URLSearchParams({
-            station_id: stationId.toString(),
-            ...params,
-        });
-        url += `?${queryParams.toString()}`;
-
-        return ApiCall(
-            fetch(url, {
-                headers: { Authorization: `Bearer ${getToken()}` },
-            }),
-            router
-        );
+            return await ApiCall(
+                fetch(`${API_BASE_URL}/stations/${stationId}/active-sensors`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                }),
+                router
+            );
+        } catch (error) {
+            handleApiError(error as ApiError, 'sensors', stationId);
+        }
     },
-
-    // Retrieves active sensors for a station.
-    getSensors: async (
-        stationId: number,
-        router: ReturnType<typeof import('next/navigation').useRouter>
-    ) => {
-        return ApiCall(
-            fetch(`${API_BASE_URL}/stations/${stationId}/active-sensors`, {
-                headers: { Authorization: `Bearer ${getToken()}` },
-            }),
-            router
-        );
-    },
-
-
-
 });

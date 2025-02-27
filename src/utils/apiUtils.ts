@@ -1,5 +1,8 @@
-// A generic API call wrapper that handles token expiry by redirecting via the router.
-// The router must be passed from the component that uses this function.
+interface ApiError extends Error {
+    code?: string;
+    status?: number;
+}
+
 export const ApiCall = async (
     fetchPromise: Promise<Response>,
     router: ReturnType<typeof import("next/navigation").useRouter>
@@ -8,7 +11,6 @@ export const ApiCall = async (
         const response = await fetchPromise;
 
         if (response.status === 401) {
-            // Token expired, redirect to login if router.push is available
             if (router && typeof router.push === "function") {
                 router.push("/login");
             }
@@ -17,15 +19,30 @@ export const ApiCall = async (
 
         if (!response.ok) {
             const errorData = await response.json();
-            throw new Error(errorData.message || "An error occurred");
+            const error = new Error(errorData.message || "An error occurred") as ApiError;
+            error.status = response.status;
+            error.code = errorData.code;
+            throw error;
         }
 
         if (response.headers.get("Content-Type")?.includes("application/json")) {
             return await response.json();
         }
-        return response.ok; // on operations like delete where only status code is returned
+        return response.ok;
+        
     } catch (error) {
-        console.log(error);
+        console.error(error);
         throw error;
     }
 };
+
+export function handleApiError(error: ApiError, context: string, id?: number): never {
+    const idStr = id ? ` ${id}` : '';
+    if (error.message === 'Unauthorized access') {
+        throw new Error(`Vous n'avez pas la permission d'accéder à ${context}${idStr}`);
+    }
+    if (error.status === 404) {
+        throw new Error(`${context}${idStr} introuvable`);
+    }
+    throw new Error(`Échec de l'opération sur ${context}${idStr}`);
+}
