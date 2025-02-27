@@ -55,7 +55,7 @@ export default function DynamicForm({
                         onChange={handleChange}
                         placeholder={field.placeholder || ""}
                         required={field.required}
-                        className="w-full border border-gray-300 rounded-md px-4 py-2"
+                        className="w-full border border-gray-300 text-gray-700 rounded-md px-4 py-2"
                         {...field.props}
                     />
                 </div>

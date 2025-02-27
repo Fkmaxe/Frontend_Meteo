@@ -28,7 +28,7 @@ export default function UserDynamicForm() {
     };
 
     return (
-        <div className="max-w-md mx-auto bg-white p-8 rounded-lg shadow-md">
+        <div className="bg-white p-8 rounded-lg shadow-md">
             {error && <div className="mb-4 text-red-600">{error}</div>}
             <h2 className="text-2xl font-semibold text-bordeaux mb-4">Créer un Utilisateur</h2>
             <DynamicForm fields={fields} onSubmit={handleSubmit} buttonText="Créer Utilisateur" />

@@ -59,7 +59,7 @@ export default function UserManagement() {
     };
 
     return (
-        <div>
+        <div >
             <h1 className="text-5xl font-bold text-center text-bordeaux mb-8">
                 Gestion des Utilisateurs
             </h1>
@@ -69,9 +69,12 @@ export default function UserManagement() {
                     <span className="ml-2">{error}</span>
                 </div>
             )}
-            {/* Creation form */}
-            <UserDynamicForm />
+            <div className="w-3/4 items-center justify-center mx-auto">
+                {/* Creation form */}
+                <UserDynamicForm />
+            </div>
             {/* User list */}
+            <h2 className="text-3xl font-semibold text-bordeaux mt-8">Liste des Utilisateurs</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
                 {users.length > 0 ? (
                     users.map((user) => (
