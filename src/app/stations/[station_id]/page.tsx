@@ -10,6 +10,7 @@ import ActiveSensorsList from "@/components/stations/station/ActiveSensorList";
 import InactiveSensorsList from "@/components/stations/station/InactiveSensorComponent";
 import AddNoteForm from "@/components/stations/station/AddNoteForm";
 import NoteList from "@/components/stations/station/NoteList";
+import NoteEditModal from "@/components/stations/station/StationNoteEditModal";
 
 export interface Sensor {
     station_id: number;
@@ -62,6 +63,7 @@ export default function StationDetail() {
     const [isModified, setIsModified] = useState(false);
     const [newNote, setNewNote] = useState("");
     const [noteTitle, setNoteTitle] = useState("");
+    const [editingNote, setEditingNote] = useState<StationNote | null>(null);
 
     useEffect(() => {
         const fetchStationDetails = async () => {
@@ -174,13 +176,44 @@ export default function StationDetail() {
         }
     };
 
-    const handleModifyNote = async (noteId: number) => {
+    const handleModifyNote = (noteId: number) => {
+        const noteToEdit = notes.find(note => note.note_id === noteId);
+        if (noteToEdit) {
+            setEditingNote(noteToEdit);
+        }
+    };
+
+    const handleUpdateNote = async (formData: Record<string, string>) => {
+        if (!editingNote) return;
+
         try {
-            await api.stations.modifyStationNote(noteId, { title: "", note_content: "" }, router);
-            setNotes(notes.filter((note) => note.note_id !== noteId));
+            const updatedNoteData = {
+                title: formData.title,
+                note_content: formData.content
+            };
+
+            await api.stations.modifyStationNote(editingNote.note_id, updatedNoteData, router);
+
+            // Update the notes list with the modified note
+            setNotes(notes.map(note =>
+                note.note_id === editingNote.note_id
+                    ? {
+                        ...note,
+                        title: formData.title,
+                        note_content: formData.content
+                    }
+                    : note
+            ));
+
+            setEditingNote(null);
         } catch (err: unknown) {
             console.error("Erreur lors de la modification de la note:", err);
+            setError(err instanceof Error ? err.message : "Une erreur est survenue");
         }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingNote(null);
     };
 
     if (loading)
@@ -262,8 +295,19 @@ export default function StationDetail() {
                         onNoteChange={setNewNote}
                         onAddNote={handleAddNote}
                     />
-                    <NoteList notes={notes} onDeleteNote={handleDeleteNote} onModifyNote={handleModifyNote} />
+                    <NoteList
+                        notes={notes}
+                        onDeleteNoteAction={handleDeleteNote}
+                        onModifyNoteAction={handleModifyNote}
+                    />
                 </div>
+                {editingNote && (
+                    <NoteEditModal
+                        note={editingNote}
+                        onSubmitAction={handleUpdateNote}
+                        onCancelAction={handleCancelEdit}
+                    />
+                )}
             </div>
         </div>
     );

@@ -13,26 +13,35 @@ export interface StationNote {
 
 interface NoteCardProps {
     note: StationNote;
-    onDelete: (noteId: number) => void;
-    onModify: (noteId: number) => void;
+    onDeleteAction: (noteId: number) => void;
+    onModifyAction: (noteId: number) => void;
 }
 
 const formatDate = (dateString: string) => new Date(dateString).toLocaleString();
 
-export default function NoteCard({ note, onDelete, onModify }: NoteCardProps) {
+
+export default function NoteCard({ note, onDeleteAction, onModifyAction }: Readonly<NoteCardProps>) {
     return (
         <BaseCard className="mb-4 p-4">
             <div className="flex justify-between text-sm text-gray-500 mb-1">
                 <span>Par: {note.user.name}</span>
                 <span>{formatDate(note.created_at)}</span>
             </div>
-            <h4 className="text-gray-800">{note.title}</h4>
+            <hr className="border-gray-200 my-2" />
+            <h4 className="text-gray-800 text-3xl">{note.title}</h4>
             <p className="text-gray-600">{note.note_content}</p>
-            <div>
-                <button onClick={() => onDelete(note.note_id)} className="mt-2 text-red-500 hover:underline">
+            <div className="flex justify-between">
+                <button
+                    onClick={() => onDeleteAction(note.note_id)}
+                    className="mt-2 text-red-500 hover:underline"
+                >
                     Supprimer
                 </button>
-                <button onClick={() => onModify(note.note_id)} className="mt-2 text-red-500 hover:underline">
+
+                <button
+                    onClick={() => onModifyAction(note.note_id)}
+                    className="mt-2 text-red-500 hover:underline"
+                >
                     Modifier
                 </button>
             </div>

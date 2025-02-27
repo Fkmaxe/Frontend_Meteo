@@ -27,7 +27,7 @@ export default function UserManagement() {
     };
 
     useEffect(() => {
-        fetchUsers();
+        fetchUsers().then(r => r);
     }, [router, refreshKey]);
 
     const handleDeleteUser = async (id: number) => {
@@ -102,8 +102,8 @@ export default function UserManagement() {
                         <UserCard
                             key={user.id}
                             user={user}
-                            onDelete={handleDeleteUser}
-                            onModify={handleModifyUser}
+                            onDeleteAction={handleDeleteUser}
+                            onModifyAction={handleModifyUser}
                         />
                     ))
                 ) : (
@@ -113,8 +113,8 @@ export default function UserManagement() {
             {editingUser && (
                 <UserEditModal
                     user={editingUser}
-                    onSubmit={handleUpdateUser}
-                    onCancel={handleCancelEdit}
+                    onSubmitAction={handleUpdateUser}
+                    onCancelAction={handleCancelEdit}
                 />
             )}
         </div>
