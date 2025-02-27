@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { api } from "@/utils/api";
 import StationCard, { Station } from "@/components/stations/StationCard";
 import StationSearchBar from "@/components/stations/StationSearchBar";
+import { usePopup} from "@/components/Utils/PopupProvider";
 
 export default function Stations() {
     const [stations, setStations] = useState<Station[]>([]);
@@ -11,23 +12,28 @@ export default function Stations() {
     const [search, setSearch] = useState("");
     const [error, setError] = useState("");
     const router = useRouter();
+    const { addPopup } = usePopup();
+
 
     useEffect(() => {
         const fetchStations = async () => {
             try {
-                const token = localStorage.getItem("jwtToken");
-                if (!token) throw new Error("Non autorisé");
-
                 const stationsData: Station[] = await api.stations.getStations(router);
 
                 // Enrich each station with its last measurement
                 const enrichedStations: Station[] = await Promise.all(
                     stationsData.map(async (station) => {
-                        const lastMeasurement = await api.stations.getLastMeasurement(station.station_id, router);
-                        return { ...station, lastMeasurement };
+                        try {
+                            const lastMeasurement = await api.stations.getLastMeasurement(station.station_id, router);
+                            return { ...station, lastMeasurement };
+                        } catch (err) {
+                            addPopup(`${err}`, "error");
+                            return { ...station, lastMeasurement: null };
+                        }
                     })
                 );
-
+                console.log("Stations loaded successfully once");
+                addPopup("Stations loaded successfully", "success");
                 setStations(enrichedStations);
                 setFilteredStations(enrichedStations);
             } catch (err) {

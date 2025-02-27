@@ -21,13 +21,13 @@ export default function DynamicForm({
                                         fields,
                                         onSubmit,
                                         buttonText = "Soumettre",
-                                    }: DynamicFormProps) {
+                                    }: Readonly<DynamicFormProps>) {
     const [formData, setFormData] = useState<Record<string, string>>({});
 
     useEffect(() => {
         const initialData: Record<string, string> = {};
         fields.forEach((field) => {
-            initialData[field.name] = field.defaultValue || "";
+            initialData[field.name] = field.defaultValue ?? "";
         });
         setFormData(initialData);
     }, [fields]);
@@ -50,12 +50,12 @@ export default function DynamicForm({
                     </label>
 
                     <BaseInput
-                        type={field.type || "text"}
+                        type={field.type ?? "text"}
                         id={field.name}
                         name={field.name}
-                        value={formData[field.name] || ""}
+                        value={formData[field.name] ?? ""}
                         onChange={handleChange}
-                        placeholder={field.placeholder || ""}
+                        placeholder={field.placeholder ?? ""}
                         required={field.required}
                         {...field.props}
                     />

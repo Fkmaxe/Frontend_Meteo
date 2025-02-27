@@ -1,13 +1,12 @@
 "use client";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import DynamicForm, { Field } from "../DynamicForm";
-import { api } from "@/utils/api";
+import { JSX } from "react";
 
-export default function LoginDynamicForm() {
-    const router = useRouter();
-    const [error, setError] = useState("");
+interface LoginDynamicFormProps {
+    handleSubmit?: (formData: Record<string, string>) => Promise<void>;
+}
 
+export default function LoginDynamicForm({ handleSubmit }: Readonly<LoginDynamicFormProps>): JSX.Element {
     const fields: Field[] = [
         {
             name: "email",
@@ -25,22 +24,19 @@ export default function LoginDynamicForm() {
         },
     ];
 
-    const handleSubmit = async (formData: Record<string, string>) => {
-        try {
-            const data = await api.users.login(formData.email, formData.password, router);
-            localStorage.setItem("jwtToken", data.token);
-            router.replace("/stations");
-        } catch (err) {
-            setError(err instanceof Error ? err.message : "An unknown error occurred");
+    // Provide a fallback function if handleSubmit is undefined.
+    const onSubmit = (formData: Record<string, string>): void => {
+        if (handleSubmit) {
+            handleSubmit(formData).catch((error) => {
+                console.error(error);
+            });
         }
     };
 
     return (
         <div className="bg-white p-8 rounded-lg shadow-md">
-            {error && <div className="mb-4 text-red-600">{error}</div>}
             <h2 className="text-2xl font-semibold text-bordeaux mb-4">Connexion</h2>
-            <DynamicForm fields={fields} onSubmit={handleSubmit} buttonText="Se connecter" />
+            <DynamicForm fields={fields} onSubmit={onSubmit} buttonText="Se connecter" />
         </div>
     );
 }
-

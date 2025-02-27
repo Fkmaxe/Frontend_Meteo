@@ -5,6 +5,8 @@ import { api } from "@/utils/api";
 import UserDynamicForm from "@/components/users/UserDynamicForm";
 import UserCard, { User } from "@/components/users/UserCard";
 import UserEditModal from "@/components/users/UserEditModal";
+import { usePopup } from "@/components/Utils/PopupProvider";
+import {add} from "@dnd-kit/utilities";
 
 export default function UserManagement() {
     const [users, setUsers] = useState<User[]>([]);
@@ -13,13 +15,16 @@ export default function UserManagement() {
     const [editingUser, setEditingUser] = useState<User | null>(null);
     const [refreshKey, setRefreshKey] = useState(0);
     const router = useRouter();
+    const { addPopup } = usePopup();
 
     const fetchUsers = async () => {
         try {
             setLoading(true);
             const data = await api.users.getUsers(router);
             setUsers(data || []);
+            addPopup("Utilisateurs chargés avec succès", "success");
         } catch (err) {
+            addPopup(`${err}`, "error");
             setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
         } finally {
             setLoading(false);
@@ -36,8 +41,10 @@ export default function UserManagement() {
             if (response === true) {
                 setUsers((prev) => prev.filter((user) => user.id !== id));
                 setRefreshKey(prev => prev + 1);
+                addPopup("Utilisateur supprimé avec succès", "success");
             }
         } catch (err) {
+            addPopup(`${err}`, "error");
             setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
         }
     };
@@ -60,7 +67,9 @@ export default function UserManagement() {
             setUsers((prevUsers) => prevUsers.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
             setEditingUser(null);
             setRefreshKey(prev => prev + 1);
+            addPopup("Utilisateur mis à jour avec succès", "success");
         } catch (err) {
+            addPopup(`${err}`, "error");
             setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
         }
     };

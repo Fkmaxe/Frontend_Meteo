@@ -11,6 +11,8 @@ import InactiveSensorsList from "@/components/stations/station/InactiveSensorCom
 import AddNoteForm from "@/components/stations/station/AddNoteForm";
 import NoteList from "@/components/stations/station/NoteList";
 import NoteEditModal from "@/components/stations/station/StationNoteEditModal";
+import { usePopup } from "@/components/Utils/PopupProvider";
+import {add} from "@dnd-kit/utilities";
 
 export interface Sensor {
     station_id: number;
@@ -64,6 +66,7 @@ export default function StationDetail() {
     const [newNote, setNewNote] = useState("");
     const [noteTitle, setNoteTitle] = useState("");
     const [editingNote, setEditingNote] = useState<StationNote | null>(null);
+    const { addPopup } = usePopup();
 
     useEffect(() => {
         const fetchStationDetails = async () => {
@@ -87,7 +90,9 @@ export default function StationDetail() {
                 setNotes(notesData);
 
                 setLoading(false);
+                addPopup("Données chargées avec succès", "success");
             } catch (err: unknown) {
+                addPopup(`err`, "error");
                 console.error("Erreur lors du chargement des données:", err);
                 setError(err instanceof Error ? err.message : "Une erreur est survenue");
                 setLoading(false);
@@ -127,6 +132,7 @@ export default function StationDetail() {
         console.log("Confirmed new order:", activeSensors);
         setIsModified(false);
         setOriginalActiveSensors(activeSensors);
+        addPopup("Enregistrement de l'ordre des capteurs... (not yet implemented)", "success");
     };
 
     const handleRollback = () => {
@@ -136,14 +142,10 @@ export default function StationDetail() {
         }));
         setActiveSensors(rolledBackSensors);
         setIsModified(false);
+        addPopup("Ordre des capteurs réinitialisé", "success");
     };
 
     const handleAddNote = async () => {
-        const token = localStorage.getItem("jwtToken");
-        if (!token) {
-            router.push("/login");
-            return;
-        }
         const noteData = {
             title: noteTitle,
             note_content: newNote,
@@ -157,21 +159,21 @@ export default function StationDetail() {
             setNotes([response, ...notes]);
             setNewNote("");
             setNoteTitle("");
+            addPopup("Note ajoutée avec succès", "success");
         } catch (err: unknown) {
+            addPopup(`err`, "error");
             console.error("Erreur lors de l'ajout de la note:", err);
         }
     };
 
     const handleDeleteNote = async (noteId: number) => {
-        const token = localStorage.getItem("jwtToken");
-        if (!token) {
-            router.push("/login");
-            return;
-        }
+
         try {
             await api.stations.delStationNote(noteId, router);
             setNotes(notes.filter((note) => note.note_id !== noteId));
+            addPopup("Note supprimée avec succès", "success");
         } catch (err: unknown) {
+            addPopup(`err`, "error");
             console.error("Erreur lors de la suppression de la note:", err);
         }
     };
@@ -206,7 +208,9 @@ export default function StationDetail() {
             ));
 
             setEditingNote(null);
+            addPopup("Note modifiée avec succès", "success");
         } catch (err: unknown) {
+            addPopup(`err`, "error");
             console.error("Erreur lors de la modification de la note:", err);
             setError(err instanceof Error ? err.message : "Une erreur est survenue");
         }
