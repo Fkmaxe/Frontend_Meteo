@@ -2,33 +2,40 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { api } from "@/utils/api";
-import UserDynamicForm from "@/components/user/UserDynamicForm";
-import UserCard, { User } from "@/components/user/UserCard";
-import UserEditModal from "@/components/user/UserEditModal";
+import UserDynamicForm from "@/components/users/UserDynamicForm";
+import UserCard, { User } from "@/components/users/UserCard";
+import UserEditModal from "@/components/users/UserEditModal";
 
 export default function UserManagement() {
     const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [editingUser, setEditingUser] = useState<User | null>(null);
+    const [refreshKey, setRefreshKey] = useState(0);
     const router = useRouter();
 
+    const fetchUsers = async () => {
+        try {
+            setLoading(true);
+            const data = await api.users.getUsers(router);
+            setUsers(data || []);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchUsers = async () => {
-            try {
-                const data = await api.users.getUsers(router);
-                setUsers(data);
-            } catch (err) {
-                setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
-            }
-        };
         fetchUsers();
-    }, [router]);
+    }, [router, refreshKey]);
 
     const handleDeleteUser = async (id: number) => {
         try {
             const response = await api.users.deleteUser(id, router);
             if (response === true) {
                 setUsers((prev) => prev.filter((user) => user.id !== id));
+                setRefreshKey(prev => prev + 1);
             }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
@@ -40,26 +47,42 @@ export default function UserManagement() {
     };
 
     const handleUpdateUser = async (formData: Record<string, string>) => {
+        if (!editingUser) return;
+
         if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
             setError("Les mots de passe ne correspondent pas.");
             return;
         }
+
         try {
-            const { confirmPassword, ...userData } = formData;
-            const updatedUser = await api.users.updateUser(editingUser!.id, userData, router);
-            setUsers(users.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
+            const { ...userData } = formData;
+            const updatedUser = await api.users.updateUser(editingUser.id, userData, router);
+            setUsers((prevUsers) => prevUsers.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
             setEditingUser(null);
+            setRefreshKey(prev => prev + 1);
         } catch (err) {
             setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
         }
+    };
+
+    const handleUserCreated = () => {
+        setRefreshKey(prev => prev + 1);
     };
 
     const handleCancelEdit = () => {
         setEditingUser(null);
     };
 
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center min-h-screen">
+                <p className="text-bordeaux">Chargement...</p>
+            </div>
+        );
+    }
+
     return (
-        <div >
+        <div>
             <h1 className="text-5xl font-bold text-center text-bordeaux mb-8">
                 Gestion des Utilisateurs
             </h1>
@@ -70,13 +93,11 @@ export default function UserManagement() {
                 </div>
             )}
             <div className="w-3/4 items-center justify-center mx-auto">
-                {/* Creation form */}
-                <UserDynamicForm />
+                <UserDynamicForm onUserCreatedAction={handleUserCreated} />
             </div>
-            {/* User list */}
             <h2 className="text-3xl font-semibold text-bordeaux mt-8">Liste des Utilisateurs</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
-                {users.length > 0 ? (
+                {users && users.length > 0 ? (
                     users.map((user) => (
                         <UserCard
                             key={user.id}
@@ -89,9 +110,12 @@ export default function UserManagement() {
                     <p className="text-center text-gray-500 col-span-full">Aucun utilisateur trouvé.</p>
                 )}
             </div>
-            {/* Edit modal */}
             {editingUser && (
-                <UserEditModal user={editingUser} onSubmit={handleUpdateUser} onCancel={handleCancelEdit} />
+                <UserEditModal
+                    user={editingUser}
+                    onSubmit={handleUpdateUser}
+                    onCancel={handleCancelEdit}
+                />
             )}
         </div>
     );

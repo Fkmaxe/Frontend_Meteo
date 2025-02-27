@@ -4,7 +4,19 @@ import { useRouter } from "next/navigation";
 import DynamicForm, { Field } from "../DynamicForm";
 import { api } from "@/utils/api";
 
-export default function UserDynamicForm() {
+interface User {
+    id: number;
+    username: string;
+    email: string;
+    password: string;
+    role: string;
+}
+
+interface UserDynamicFormProps {
+    onUserCreatedAction: () => void;
+}
+
+export default function UserDynamicForm({ onUserCreatedAction }: Readonly<UserDynamicFormProps>) {
     const router = useRouter();
     const [error, setError] = useState("");
 
@@ -17,11 +29,17 @@ export default function UserDynamicForm() {
 
     const handleSubmit = async (formData: Record<string, string>) => {
         try {
-            const token = localStorage.getItem("jwtToken");
-            if (!token) throw new Error("Non autorisé");
-            const createdUser = await api.users.createUser(formData, router);
-            console.log("Utilisateur créé:", createdUser);
-            // Optionnel : mettre à jour l'état global ou afficher un message de succès
+            const userData: Omit<User, "id"> = {
+                username: formData.username,
+                email: formData.email,
+                password: formData.password,
+                role: formData.role
+            };
+
+            const createdUser = await api.users.createUser(userData, router);
+            if (createdUser) {
+                onUserCreatedAction();
+            }
         } catch (err) {
             setError(err instanceof Error ? err.message : "Une erreur inconnue est survenue");
         }
